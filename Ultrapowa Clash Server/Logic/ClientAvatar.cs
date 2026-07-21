@@ -225,6 +225,11 @@ namespace UCS.Logic
             return m_vScore;
         }
 
+        public void SetScore(int newScore)
+        {
+            m_vScore = newScore; // Sesuaikan 'm_vScore' dengan variabel yang ada di dalam GetScore() lu
+        }
+
         public bool HasEnoughDiamonds(int diamondCount)
         {
             return (m_vCurrentGems >= diamondCount);
