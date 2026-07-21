@@ -1,8 +1,8 @@
-version: x.x.{build}
+master: x.x.{build}
 branches:
   only:
   - master
-image: Visual Studio 2016
+image: Visual Studio 2015
 configuration: Debug
 install:
 - cmd: git submodule update --init --recursive
