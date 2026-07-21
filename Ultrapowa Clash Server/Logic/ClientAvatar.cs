@@ -51,101 +51,10 @@ namespace UCS.Logic
             m_vExperience = 115;
             this.EndShieldTime = (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds + Convert.ToInt32(ConfigurationManager.AppSettings["startingShieldTime"]));
             m_vCurrentGems = Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]);
-            
             m_vScore = Convert.ToInt32(ConfigurationManager.AppSettings["startingTrophies"]);
+            
             m_vAllTimeBestScore = m_vScore; // <-- DITAMBAHKAN: Set default pas akun baru dibuat
             
-            this.TutorialStepsCount = 0x0A;
-            m_vAvatarName = "NoNameYet";
-            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Gold"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGold"]));
-            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Elixir"), Convert.ToInt32(ConfigurationManager.AppSettings["startingElixir"]));
-            SetResourceCount(ObjectManager.DataTables.GetResourceByName("DarkElixir"), Convert.ToInt32(ConfigurationManager.AppSettings["startingDarkElixir"]));
-            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Diamonds"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]));
-        }
-
-        public byte[] Encode()
-        {
-            List<Byte> data = new List<Byte>();
-
-            data.AddInt32(0);
-            data.AddInt64(m_vId);
-            data.AddInt64(m_vCurrentHomeId);
-            if(m_vAllianceId != 0)
-            {
-                data.Add(1);
-                data.AddInt64(m_vAllianceId);
-                Alliance alliance = ObjectManager.GetAlliance(m_vAllianceId);
-                data.AddString(alliance.GetAllianceName());
-                data.AddInt32(alliance.GetAllianceBadgeData());
-                data.AddInt32(alliance.GetAllianceMember(m_vId).GetRole());
-                data.AddInt32(alliance.GetAllianceLevel());
-                data.Add(0);
-                data.AddInt32(0);
-            }
-            else
-            {
-                data.Add(0);
-                data.AddInt32(0);
-            }
-
-            //7.Siap bro! Ini kode full `ClientAvatar.cs` yang udah ditambahin variabel dan logika buat nyimpen rekor `All time Best` (skor tertinggi). Bagian yang gw tambahin udah gw tandain pakai komentar biar lu gampang ngecek perubahannya.
-
-```csharp
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Configuration;
-using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using UCS.Core;
-using UCS.PacketProcessing;
-using UCS.GameFiles;
-using UCS.Helpers;
-
-namespace UCS.Logic
-{
-    class ClientAvatar : Avatar
-    {
-        private long m_vId;
-        private long m_vCurrentHomeId;
-        private long m_vAllianceId;
-        private int m_vAvatarLevel;
-        private string m_vAvatarName;
-        private int m_vExperience;
-        private int m_vCurrentGems;
-        private int m_vScore;
-        private int m_vAllTimeBestScore; // <-- TAMBAHAN: Variabel buat nyimpen skor tertinggi
-        private byte m_vIsAvatarNameSet;
-        private int m_vLeagueId;
-
-        public ClientAvatar() : base()
-        {
-            this.Achievements = new List<DataSlot>();
-            this.AllianceUnits = new List<DataSlot>();
-            this.NpcStars = new List<DataSlot>();
-            this.NpcLootedGold = new List<DataSlot>();
-            this.NpcLootedElixir = new List<DataSlot>();
-            m_vLeagueId = 9;
-        }
-
-        public ClientAvatar(long id) : this()
-        {
-            this.LastUpdate = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-            this.Login = id.ToString() + ((int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds).ToString();
-            this.m_vId = id;
-            this.m_vCurrentHomeId = id;
-            m_vIsAvatarNameSet = 0x00;
-            m_vAvatarLevel = 9;
-            this.m_vAllianceId = 0;
-            m_vExperience = 115;
-            this.EndShieldTime = (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds + Convert.ToInt32(ConfigurationManager.AppSettings["startingShieldTime"]));
-            m_vCurrentGems = Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]);
-            m_vScore = Convert.ToInt32(ConfigurationManager.AppSettings["startingTrophies"]);
-            m_vAllTimeBestScore = m_vScore; // <-- TAMBAHAN: Set skor tertinggi awal sama dengan skor awal
             this.TutorialStepsCount = 0x0A;
             m_vAvatarName = "NoNameYet";
             SetResourceCount(ObjectManager.DataTables.GetResourceByName("Gold"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGold"]));
@@ -315,7 +224,7 @@ namespace UCS.Logic
             return m_vScore;
         }
 
-        // <-- TAMBAHAN: Fungsi untuk mengambil skor tertinggi yang pernah diraih
+        // <-- DITAMBAHKAN: Fungsi untuk mengambil skor tertinggi yang pernah diraih
         public int GetAllTimeBestScore()
         {
             return m_vAllTimeBestScore;
@@ -356,7 +265,7 @@ namespace UCS.Logic
             jsonData.Add("experience", m_vExperience);
             jsonData.Add("current_gems", m_vCurrentGems);
             jsonData.Add("score", m_vScore);
-            jsonData.Add("all_time_best_score", m_vAllTimeBestScore); // <-- TAMBAHAN: Simpan skor tertinggi ke database
+            jsonData.Add("all_time_best_score", m_vAllTimeBestScore); // <-- DITAMBAHKAN: Simpan skor tertinggi ke database
             jsonData.Add("is_avatar_name_set", m_vIsAvatarNameSet);
 
             JArray jsonResourcesArray = new JArray();
@@ -447,7 +356,7 @@ namespace UCS.Logic
             m_vScore = jsonObject["score"].ToObject<int>();
             m_vIsAvatarNameSet = jsonObject["is_avatar_name_set"].ToObject<byte>();
 
-            // <-- TAMBAHAN: Load skor tertinggi dengan pengecekan aman untuk akun lama
+            // <-- DITAMBAHKAN: Load skor tertinggi dengan pengecekan aman untuk akun lama
             if (jsonObject["all_time_best_score"] != null)
             {
                 m_vAllTimeBestScore = jsonObject["all_time_best_score"].ToObject<int>();
@@ -606,7 +515,7 @@ namespace UCS.Logic
             else m_vLeagueId = 22;                      
         }
 
-        // <-- TAMBAHAN: Modifikasi fungsi SetScore untuk ngetrack rekor
+        // <-- DITAMBAHKAN: Modifikasi fungsi SetScore untuk ngetrack rekor
         public void SetScore(int newScore)
         {
             m_vScore = newScore;
