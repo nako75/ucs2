@@ -15,5 +15,5 @@ build:
   parallel: true
   verbosity: normal
 artifacts:
-- path: Ultrapowa Clash Server\Debug\
+- path: Ultrapowa Clash Server\bin\Debug\
   name: ucs2
