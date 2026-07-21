@@ -25,6 +25,100 @@ namespace UCS.Logic
         private int m_vExperience;
         private int m_vCurrentGems;
         private int m_vScore;
+        private int m_vAllTimeBestScore; // <-- DITAMBAHKAN: Variabel All Time Best
+        private byte m_vIsAvatarNameSet;
+        private int m_vLeagueId;
+
+        public ClientAvatar() : base()
+        {
+            this.Achievements = new List<DataSlot>();
+            this.AllianceUnits = new List<DataSlot>();
+            this.NpcStars = new List<DataSlot>();
+            this.NpcLootedGold = new List<DataSlot>();
+            this.NpcLootedElixir = new List<DataSlot>();
+            m_vLeagueId = 9;
+        }
+
+        public ClientAvatar(long id) : this()
+        {
+            this.LastUpdate = (int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            this.Login = id.ToString() + ((int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds).ToString();
+            this.m_vId = id;
+            this.m_vCurrentHomeId = id;
+            m_vIsAvatarNameSet = 0x00;
+            m_vAvatarLevel = 9;
+            this.m_vAllianceId = 0;
+            m_vExperience = 115;
+            this.EndShieldTime = (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds + Convert.ToInt32(ConfigurationManager.AppSettings["startingShieldTime"]));
+            m_vCurrentGems = Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]);
+            
+            m_vScore = Convert.ToInt32(ConfigurationManager.AppSettings["startingTrophies"]);
+            m_vAllTimeBestScore = m_vScore; // <-- DITAMBAHKAN: Set default pas akun baru dibuat
+            
+            this.TutorialStepsCount = 0x0A;
+            m_vAvatarName = "NoNameYet";
+            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Gold"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGold"]));
+            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Elixir"), Convert.ToInt32(ConfigurationManager.AppSettings["startingElixir"]));
+            SetResourceCount(ObjectManager.DataTables.GetResourceByName("DarkElixir"), Convert.ToInt32(ConfigurationManager.AppSettings["startingDarkElixir"]));
+            SetResourceCount(ObjectManager.DataTables.GetResourceByName("Diamonds"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]));
+        }
+
+        public byte[] Encode()
+        {
+            List<Byte> data = new List<Byte>();
+
+            data.AddInt32(0);
+            data.AddInt64(m_vId);
+            data.AddInt64(m_vCurrentHomeId);
+            if(m_vAllianceId != 0)
+            {
+                data.Add(1);
+                data.AddInt64(m_vAllianceId);
+                Alliance alliance = ObjectManager.GetAlliance(m_vAllianceId);
+                data.AddString(alliance.GetAllianceName());
+                data.AddInt32(alliance.GetAllianceBadgeData());
+                data.AddInt32(alliance.GetAllianceMember(m_vId).GetRole());
+                data.AddInt32(alliance.GetAllianceLevel());
+                data.Add(0);
+                data.AddInt32(0);
+            }
+            else
+            {
+                data.Add(0);
+                data.AddInt32(0);
+            }
+
+            //7.Siap bro! Ini kode full `ClientAvatar.cs` yang udah ditambahin variabel dan logika buat nyimpen rekor `All time Best` (skor tertinggi). Bagian yang gw tambahin udah gw tandain pakai komentar biar lu gampang ngecek perubahannya.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Configuration;
+using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using UCS.Core;
+using UCS.PacketProcessing;
+using UCS.GameFiles;
+using UCS.Helpers;
+
+namespace UCS.Logic
+{
+    class ClientAvatar : Avatar
+    {
+        private long m_vId;
+        private long m_vCurrentHomeId;
+        private long m_vAllianceId;
+        private int m_vAvatarLevel;
+        private string m_vAvatarName;
+        private int m_vExperience;
+        private int m_vCurrentGems;
+        private int m_vScore;
+        private int m_vAllTimeBestScore; // <-- TAMBAHAN: Variabel buat nyimpen skor tertinggi
         private byte m_vIsAvatarNameSet;
         private int m_vLeagueId;
 
@@ -51,6 +145,7 @@ namespace UCS.Logic
             this.EndShieldTime = (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds + Convert.ToInt32(ConfigurationManager.AppSettings["startingShieldTime"]));
             m_vCurrentGems = Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]);
             m_vScore = Convert.ToInt32(ConfigurationManager.AppSettings["startingTrophies"]);
+            m_vAllTimeBestScore = m_vScore; // <-- TAMBAHAN: Set skor tertinggi awal sama dengan skor awal
             this.TutorialStepsCount = 0x0A;
             m_vAvatarName = "NoNameYet";
             SetResourceCount(ObjectManager.DataTables.GetResourceByName("Gold"), Convert.ToInt32(ConfigurationManager.AppSettings["startingGold"]));
@@ -95,7 +190,7 @@ namespace UCS.Logic
             data.AddInt32(0);
             data.AddInt32(0);
             data.AddInt32(0);
-            data.AddInt32(GetLeagueId()); // <-- DIPERBAIKI: Menggunakan GetLeagueId() agar otomatis ter-upgrade pas login!
+            data.AddInt32(GetLeagueId()); 
 
             data.AddInt32(GetAllianceCastleLevel());
             data.AddInt32(GetAllianceCastleTotalCapacity());
@@ -220,6 +315,12 @@ namespace UCS.Logic
             return m_vScore;
         }
 
+        // <-- TAMBAHAN: Fungsi untuk mengambil skor tertinggi yang pernah diraih
+        public int GetAllTimeBestScore()
+        {
+            return m_vAllTimeBestScore;
+        }
+
         public bool HasEnoughDiamonds(int diamondCount)
         {
             return (m_vCurrentGems >= diamondCount);
@@ -255,6 +356,7 @@ namespace UCS.Logic
             jsonData.Add("experience", m_vExperience);
             jsonData.Add("current_gems", m_vCurrentGems);
             jsonData.Add("score", m_vScore);
+            jsonData.Add("all_time_best_score", m_vAllTimeBestScore); // <-- TAMBAHAN: Simpan skor tertinggi ke database
             jsonData.Add("is_avatar_name_set", m_vIsAvatarNameSet);
 
             JArray jsonResourcesArray = new JArray();
@@ -344,6 +446,16 @@ namespace UCS.Logic
             m_vCurrentGems = jsonObject["current_gems"].ToObject<int>();
             m_vScore = jsonObject["score"].ToObject<int>();
             m_vIsAvatarNameSet = jsonObject["is_avatar_name_set"].ToObject<byte>();
+
+            // <-- TAMBAHAN: Load skor tertinggi dengan pengecekan aman untuk akun lama
+            if (jsonObject["all_time_best_score"] != null)
+            {
+                m_vAllTimeBestScore = jsonObject["all_time_best_score"].ToObject<int>();
+            }
+            else
+            {
+                m_vAllTimeBestScore = m_vScore;
+            }
 
             JArray jsonResources = (JArray)jsonObject["resources"];
             foreach (JObject resource in jsonResources)
@@ -467,42 +579,46 @@ namespace UCS.Logic
             m_vLeagueId = id;
         }
 
-        // 1. Fungsi rahasia buat ngitung ID Liga dari Bronze sampai Legend (COC v7.156)
         public void UpdateLeague()
         {
-            if (m_vScore < 400) m_vLeagueId = 0;        // Unranked / No League
-            else if (m_vScore < 500) m_vLeagueId = 1;   // Bronze III
-            else if (m_vScore < 600) m_vLeagueId = 2;   // Bronze II
-            else if (m_vScore < 800) m_vLeagueId = 3;   // Bronze I
-            else if (m_vScore < 1000) m_vLeagueId = 4;  // Silver III
-            else if (m_vScore < 1200) m_vLeagueId = 5;  // Silver II
-            else if (m_vScore < 1400) m_vLeagueId = 6;  // Silver I
-            else if (m_vScore < 1600) m_vLeagueId = 7;  // Gold III
-            else if (m_vScore < 1800) m_vLeagueId = 8;  // Gold II
-            else if (m_vScore < 2000) m_vLeagueId = 9;  // Gold I
-            else if (m_vScore < 2200) m_vLeagueId = 10; // Crystal III (Trophy 2064 lu masuk sini!)
-            else if (m_vScore < 2400) m_vLeagueId = 11; // Crystal II
-            else if (m_vScore < 2600) m_vLeagueId = 12; // Crystal I
-            else if (m_vScore < 2800) m_vLeagueId = 13; // Master III
-            else if (m_vScore < 3000) m_vLeagueId = 14; // Master II
-            else if (m_vScore < 3200) m_vLeagueId = 15; // Master I
-            else if (m_vScore < 3500) m_vLeagueId = 16; // Champion III
-            else if (m_vScore < 3800) m_vLeagueId = 17; // Champion II
-            else if (m_vScore < 4100) m_vLeagueId = 18; // Champion I
-            else if (m_vScore < 4400) m_vLeagueId = 19; // Titan III
-            else if (m_vScore < 4700) m_vLeagueId = 20; // Titan II
-            else if (m_vScore < 5000) m_vLeagueId = 21; // Titan I
-            else m_vLeagueId = 22;                      // Legend League! (5000+)
+            if (m_vScore < 400) m_vLeagueId = 0;        
+            else if (m_vScore < 500) m_vLeagueId = 1;   
+            else if (m_vScore < 600) m_vLeagueId = 2;   
+            else if (m_vScore < 800) m_vLeagueId = 3;   
+            else if (m_vScore < 1000) m_vLeagueId = 4;  
+            else if (m_vScore < 1200) m_vLeagueId = 5;  
+            else if (m_vScore < 1400) m_vLeagueId = 6;  
+            else if (m_vScore < 1600) m_vLeagueId = 7;  
+            else if (m_vScore < 1800) m_vLeagueId = 8;  
+            else if (m_vScore < 2000) m_vLeagueId = 9;  
+            else if (m_vScore < 2200) m_vLeagueId = 10; 
+            else if (m_vScore < 2400) m_vLeagueId = 11; 
+            else if (m_vScore < 2600) m_vLeagueId = 12; 
+            else if (m_vScore < 2800) m_vLeagueId = 13; 
+            else if (m_vScore < 3000) m_vLeagueId = 14; 
+            else if (m_vScore < 3200) m_vLeagueId = 15; 
+            else if (m_vScore < 3500) m_vLeagueId = 16; 
+            else if (m_vScore < 3800) m_vLeagueId = 17; 
+            else if (m_vScore < 4100) m_vLeagueId = 18; 
+            else if (m_vScore < 4400) m_vLeagueId = 19; 
+            else if (m_vScore < 4700) m_vLeagueId = 20; 
+            else if (m_vScore < 5000) m_vLeagueId = 21; 
+            else m_vLeagueId = 22;                      
         }
 
-        // 2. Update fungsi SetScore biar otomatis ngitung Liga pas attack selesai
+        // <-- TAMBAHAN: Modifikasi fungsi SetScore untuk ngetrack rekor
         public void SetScore(int newScore)
         {
             m_vScore = newScore;
-            UpdateLeague(); // <-- Setiap tropy berubah, Emblem Liga langsung ganti!
+            
+            if (m_vScore > m_vAllTimeBestScore)
+            {
+                m_vAllTimeBestScore = m_vScore;
+            }
+            
+            UpdateLeague(); 
         }
 
-        // 3. Supaya pas lu login/relog, emblemnya otomatis kebenerin kalau sebelumnya salah
         public int GetLeagueId()
         {
             UpdateLeague();
