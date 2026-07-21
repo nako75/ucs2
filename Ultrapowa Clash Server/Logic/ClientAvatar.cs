@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -95,7 +95,7 @@ namespace UCS.Logic
             data.AddInt32(0);
             data.AddInt32(0);
             data.AddInt32(0);
-            data.AddInt32(m_vLeagueId);//league
+            data.AddInt32(GetLeagueId()); // <-- DIPERBAIKI: Menggunakan GetLeagueId() agar otomatis ter-upgrade pas login!
 
             data.AddInt32(GetAllianceCastleLevel());
             data.AddInt32(GetAllianceCastleTotalCapacity());
@@ -210,11 +210,6 @@ namespace UCS.Logic
             return m_vId;
         }
 
-        public int GetLeagueId()
-        {
-            return m_vLeagueId;
-        }
-
         public int GetSecondsFromLastUpdate()
         {
             return (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds - this.LastUpdate;
@@ -223,11 +218,6 @@ namespace UCS.Logic
         public int GetScore()
         {
             return m_vScore;
-        }
-
-        public void SetScore(int newScore)
-        {
-            m_vScore = newScore; // Sesuaikan 'm_vScore' dengan variabel yang ada di dalam GetScore() lu
         }
 
         public bool HasEnoughDiamonds(int diamondCount)
@@ -266,11 +256,6 @@ namespace UCS.Logic
             jsonData.Add("current_gems", m_vCurrentGems);
             jsonData.Add("score", m_vScore);
             jsonData.Add("is_avatar_name_set", m_vIsAvatarNameSet);
-
-            /*JArray jsonResourceCapsArray = new JArray();
-            foreach (var resource in GetResourceCaps())
-                jsonResourceCapsArray.Add(resource.Save(new JObject()));
-            jsonData.Add("max_resources", jsonResourceCapsArray);*/
 
             JArray jsonResourcesArray = new JArray();
             foreach (var resource in GetResources())
@@ -319,15 +304,6 @@ namespace UCS.Logic
 
             jsonData.Add("tutorial_step", TutorialStepsCount);
 
-            /*JArray jsonAchievementsArray = new JArray();
-            foreach (var achievement in Achievements)
-            {
-                JObject jsonObject = new JObject();
-                jsonObject.Add("global_id", achievement.Data.GetGlobalID());
-                jsonAchievementsArray.Add(jsonObject);
-            }     
-            jsonData.Add("unlocked_achievements", jsonAchievementsArray);*/
-
             JArray jsonAchievementsProgressArray = new JArray();
             foreach (var achievement in Achievements)
                 jsonAchievementsProgressArray.Add(achievement.Save(new JObject()));
@@ -368,14 +344,6 @@ namespace UCS.Logic
             m_vCurrentGems = jsonObject["current_gems"].ToObject<int>();
             m_vScore = jsonObject["score"].ToObject<int>();
             m_vIsAvatarNameSet = jsonObject["is_avatar_name_set"].ToObject<byte>();
-
-            /*JArray jsonMaxResources = (JArray)jsonObject["max_resources"];
-            foreach (JObject resource in jsonMaxResources)
-            {
-                var ds = new DataSlot(null, 0);
-                ds.Load(resource);
-                m_vResourceCaps.Add(ds);
-            }*/
 
             JArray jsonResources = (JArray)jsonObject["resources"];
             foreach (JObject resource in jsonResources)
@@ -451,13 +419,6 @@ namespace UCS.Logic
 
             TutorialStepsCount = jsonObject["tutorial_step"].ToObject<uint>();
 
-            /*JArray jsonUnlockedAchievements = (JArray)jsonObject["unlocked_achievements"];
-            foreach (JObject data in jsonUnlockedAchievements)
-            {
-                int globalId = data["global_id"].ToObject<int>();
-                Achievements.Add(globalId);
-            }*/
-
             JArray jsonAchievementsProgress = (JArray)jsonObject["achievements_progress"];
             foreach (JObject data in jsonAchievementsProgress)
             {
@@ -506,6 +467,48 @@ namespace UCS.Logic
             m_vLeagueId = id;
         }
 
+        // 1. Fungsi rahasia buat ngitung ID Liga dari Bronze sampai Legend (COC v7.156)
+        public void UpdateLeague()
+        {
+            if (m_vScore < 400) m_vLeagueId = 0;        // Unranked / No League
+            else if (m_vScore < 500) m_vLeagueId = 1;   // Bronze III
+            else if (m_vScore < 600) m_vLeagueId = 2;   // Bronze II
+            else if (m_vScore < 800) m_vLeagueId = 3;   // Bronze I
+            else if (m_vScore < 1000) m_vLeagueId = 4;  // Silver III
+            else if (m_vScore < 1200) m_vLeagueId = 5;  // Silver II
+            else if (m_vScore < 1400) m_vLeagueId = 6;  // Silver I
+            else if (m_vScore < 1600) m_vLeagueId = 7;  // Gold III
+            else if (m_vScore < 1800) m_vLeagueId = 8;  // Gold II
+            else if (m_vScore < 2000) m_vLeagueId = 9;  // Gold I
+            else if (m_vScore < 2200) m_vLeagueId = 10; // Crystal III (Trophy 2064 lu masuk sini!)
+            else if (m_vScore < 2400) m_vLeagueId = 11; // Crystal II
+            else if (m_vScore < 2600) m_vLeagueId = 12; // Crystal I
+            else if (m_vScore < 2800) m_vLeagueId = 13; // Master III
+            else if (m_vScore < 3000) m_vLeagueId = 14; // Master II
+            else if (m_vScore < 3200) m_vLeagueId = 15; // Master I
+            else if (m_vScore < 3500) m_vLeagueId = 16; // Champion III
+            else if (m_vScore < 3800) m_vLeagueId = 17; // Champion II
+            else if (m_vScore < 4100) m_vLeagueId = 18; // Champion I
+            else if (m_vScore < 4400) m_vLeagueId = 19; // Titan III
+            else if (m_vScore < 4700) m_vLeagueId = 20; // Titan II
+            else if (m_vScore < 5000) m_vLeagueId = 21; // Titan I
+            else m_vLeagueId = 22;                      // Legend League! (5000+)
+        }
+
+        // 2. Update fungsi SetScore biar otomatis ngitung Liga pas attack selesai
+        public void SetScore(int newScore)
+        {
+            m_vScore = newScore;
+            UpdateLeague(); // <-- Setiap tropy berubah, Emblem Liga langsung ganti!
+        }
+
+        // 3. Supaya pas lu login/relog, emblemnya otomatis kebenerin kalau sebelumnya salah
+        public int GetLeagueId()
+        {
+            UpdateLeague();
+            return m_vLeagueId;
+        }
+
         public void SetName(string name)
         {
             m_vAvatarName = name;
@@ -525,7 +528,6 @@ namespace UCS.Logic
         public List<DataSlot> Achievements { get; set; }
         public int LastUpdate { get; set; }
         public String Login { get; set; }
-        //public uint Region { get; set; }
         public Village Village { get; set; }
         public int EndShieldTime { get; set; }
         public uint TutorialStepsCount { get; set; }
