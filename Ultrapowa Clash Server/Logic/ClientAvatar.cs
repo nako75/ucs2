@@ -114,6 +114,9 @@ namespace UCS.Logic
             data.AddInt32(0x04B0);
             data.AddInt32(0x003C);
             data.AddInt32(m_vScore);
+            data.AddInt32(0x04B0);
+            data.AddInt32(m_vAllTimeBestScore); // <-- Pindahkan All-Time Best langsung ke stream utama Encode avatar!
+
 
             data.AddRange(new byte[]{
                 0x00, 0x00, 0x00, 0x00, 
