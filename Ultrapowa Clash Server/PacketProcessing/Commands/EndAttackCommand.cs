@@ -32,7 +32,7 @@ namespace UCS.PacketProcessing.Commands
             Console.ResetColor();
 
             // Dibungkus pakai List supaya gak memicu error CS1503
-            DatabaseManager.Save(new List<Level> { level });
+            new DatabaseManager().Save(new List<Level> { level });
         }
     }
 }
