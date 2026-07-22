@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using UCS.Logic;
 using UCS.Helpers;
+using UCS.PacketProcessing.Messages.Client; // <-- TAMBAHKAN BARIS INI SUPAYA KENAL STARTWARSEARCHMESSAGE
 
 namespace UCS.PacketProcessing
 {
