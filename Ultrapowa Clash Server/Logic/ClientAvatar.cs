@@ -25,9 +25,11 @@ namespace UCS.Logic
         private int m_vExperience;
         private int m_vCurrentGems;
         private int m_vScore;
-        private int m_vAllTimeBestScore; // <-- DITAMBAHKAN: Variabel All Time Best
         private byte m_vIsAvatarNameSet;
         private int m_vLeagueId;
+        
+        // --- FITUR BARU: ALL TIME BEST TROPHY ---
+        private int m_vAllTimeBestScore;
 
         public ClientAvatar() : base()
         {
@@ -37,6 +39,7 @@ namespace UCS.Logic
             this.NpcLootedGold = new List<DataSlot>();
             this.NpcLootedElixir = new List<DataSlot>();
             m_vLeagueId = 9;
+            m_vAllTimeBestScore = 0;
         }
 
         public ClientAvatar(long id) : this()
@@ -53,7 +56,8 @@ namespace UCS.Logic
             m_vCurrentGems = Convert.ToInt32(ConfigurationManager.AppSettings["startingGems"]);
             m_vScore = Convert.ToInt32(ConfigurationManager.AppSettings["startingTrophies"]);
             
-            m_vAllTimeBestScore = m_vScore; // <-- DITAMBAHKAN: Set default pas akun baru dibuat
+            // Set rekor awal sama dengan trophy awal pas akun baru dibuat
+            m_vAllTimeBestScore = m_vScore;
             
             this.TutorialStepsCount = 0x0A;
             m_vAvatarName = "NoNameYet";
@@ -99,7 +103,7 @@ namespace UCS.Logic
             data.AddInt32(0);
             data.AddInt32(0);
             data.AddInt32(0);
-            data.AddInt32(GetLeagueId()); 
+            data.AddInt32(GetLeagueId());
 
             data.AddInt32(GetAllianceCastleLevel());
             data.AddInt32(GetAllianceCastleTotalCapacity());
@@ -114,18 +118,17 @@ namespace UCS.Logic
             data.AddInt32(0x04B0);
             data.AddInt32(0x003C);
             data.AddInt32(m_vScore);
-            data.AddInt32(0x04B0);
-            data.AddInt32(m_vAllTimeBestScore); // <-- Pindahkan All-Time Best langsung ke stream utama Encode avatar!
 
+            // --- BONGKAR MISTERI 7 BARIS ANGKA NOL SUPAYA PROFIL LU HIDUP ---
+            data.AddInt32(0); // 1. Attacks Won (Nanti bisa kita bikin fiturnya juga!)
+            data.AddInt32(0); // 2. Attacks Lost
+            data.AddInt32(0); // 3. Defenses Won
+            data.AddInt32(0); // 4. Defenses Lost
+            data.AddInt32(GetAllTimeBestScore()); // 5. ALL TIME BEST TROPHIES!
+            data.AddInt32(0); // 6. War Stars Won
+            data.AddInt32(0); // 7. Unspecified zero
 
             data.AddRange(new byte[]{
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
-                0x00, 0x00, 0x00, 0x00, 
                 0x01, 
                 0x00, 0x00, 0x00, 0xDC, 0x6C, 0xF5, 0xEB, 0x48
             });
@@ -155,26 +158,24 @@ namespace UCS.Logic
             {
                 data.AddRange(BitConverter.GetBytes(u.Data.GetGlobalID()).Reverse());
                 data.AddRange(BitConverter.GetBytes(u.Value).Reverse());
-                data.AddRange(BitConverter.GetBytes(0).Reverse());//A CHANGER
+                data.AddRange(BitConverter.GetBytes(0).Reverse());
             }
 
             data.AddRange(BitConverter.GetBytes(TutorialStepsCount).Reverse());
             for (uint i = 0; i < TutorialStepsCount; i++)
                 data.AddRange(BitConverter.GetBytes(0x01406F40 + i).Reverse());
             
-            //Unlocked Achievements
             data.AddRange(BitConverter.GetBytes(Achievements.Count).Reverse());
             foreach (DataSlot a in Achievements)
             {
                 data.AddRange(BitConverter.GetBytes(a.Data.GetGlobalID()).Reverse());
             }
 
-            //Achievement Progress
             data.AddRange(BitConverter.GetBytes(Achievements.Count).Reverse());
             foreach (DataSlot a in Achievements)
             {
                 data.AddRange(BitConverter.GetBytes(a.Data.GetGlobalID()).Reverse());
-                data.AddRange(BitConverter.GetBytes(0).Reverse());//A CHANGER
+                data.AddRange(BitConverter.GetBytes(0).Reverse());
             }
 
             data.AddDataSlots(NpcStars);
@@ -226,11 +227,21 @@ namespace UCS.Logic
         {
             return m_vScore;
         }
-
-        // <-- DITAMBAHKAN: Fungsi untuk mengambil skor tertinggi yang pernah diraih
+        
+        // --- GETTER & SETTER BUAT ALL TIME BEST ---
         public int GetAllTimeBestScore()
         {
+            // Kalau karena suatu hal skor sekarang lebih tinggi dari rekor, otomatis update!
+            if (m_vScore > m_vAllTimeBestScore)
+            {
+                m_vAllTimeBestScore = m_vScore;
+            }
             return m_vAllTimeBestScore;
+        }
+
+        public void SetAllTimeBestScore(int score)
+        {
+            m_vAllTimeBestScore = score;
         }
 
         public bool HasEnoughDiamonds(int diamondCount)
@@ -268,7 +279,10 @@ namespace UCS.Logic
             jsonData.Add("experience", m_vExperience);
             jsonData.Add("current_gems", m_vCurrentGems);
             jsonData.Add("score", m_vScore);
-            jsonData.Add("all_time_best_score", m_vAllTimeBestScore); // <-- DITAMBAHKAN: Simpan skor tertinggi ke database
+            
+            // Simpan All Time Best ke JSON database
+            jsonData.Add("all_time_best_score", m_vAllTimeBestScore);
+            
             jsonData.Add("is_avatar_name_set", m_vIsAvatarNameSet);
 
             JArray jsonResourcesArray = new JArray();
@@ -357,9 +371,8 @@ namespace UCS.Logic
             m_vExperience = jsonObject["experience"].ToObject<int>();
             m_vCurrentGems = jsonObject["current_gems"].ToObject<int>();
             m_vScore = jsonObject["score"].ToObject<int>();
-            m_vIsAvatarNameSet = jsonObject["is_avatar_name_set"].ToObject<byte>();
-
-            // <-- DITAMBAHKAN: Load skor tertinggi dengan pengecekan aman untuk akun lama
+            
+            // Pengaman: Kalau akun lama belum punya key "all_time_best_score", samakan dengan skor sekarang
             if (jsonObject["all_time_best_score"] != null)
             {
                 m_vAllTimeBestScore = jsonObject["all_time_best_score"].ToObject<int>();
@@ -368,6 +381,8 @@ namespace UCS.Logic
             {
                 m_vAllTimeBestScore = m_vScore;
             }
+
+            m_vIsAvatarNameSet = jsonObject["is_avatar_name_set"].ToObject<byte>();
 
             JArray jsonResources = (JArray)jsonObject["resources"];
             foreach (JObject resource in jsonResources)
@@ -493,42 +508,43 @@ namespace UCS.Logic
 
         public void UpdateLeague()
         {
-            if (m_vScore < 400) m_vLeagueId = 0;        
-            else if (m_vScore < 500) m_vLeagueId = 1;   
-            else if (m_vScore < 600) m_vLeagueId = 2;   
-            else if (m_vScore < 800) m_vLeagueId = 3;   
-            else if (m_vScore < 1000) m_vLeagueId = 4;  
-            else if (m_vScore < 1200) m_vLeagueId = 5;  
-            else if (m_vScore < 1400) m_vLeagueId = 6;  
-            else if (m_vScore < 1600) m_vLeagueId = 7;  
-            else if (m_vScore < 1800) m_vLeagueId = 8;  
-            else if (m_vScore < 2000) m_vLeagueId = 9;  
-            else if (m_vScore < 2200) m_vLeagueId = 10; 
-            else if (m_vScore < 2400) m_vLeagueId = 11; 
-            else if (m_vScore < 2600) m_vLeagueId = 12; 
-            else if (m_vScore < 2800) m_vLeagueId = 13; 
-            else if (m_vScore < 3000) m_vLeagueId = 14; 
-            else if (m_vScore < 3200) m_vLeagueId = 15; 
-            else if (m_vScore < 3500) m_vLeagueId = 16; 
-            else if (m_vScore < 3800) m_vLeagueId = 17; 
-            else if (m_vScore < 4100) m_vLeagueId = 18; 
-            else if (m_vScore < 4400) m_vLeagueId = 19; 
-            else if (m_vScore < 4700) m_vLeagueId = 20; 
-            else if (m_vScore < 5000) m_vLeagueId = 21; 
-            else m_vLeagueId = 22;                      
+            if (m_vScore < 400) m_vLeagueId = 0;
+            else if (m_vScore < 500) m_vLeagueId = 1;
+            else if (m_vScore < 600) m_vLeagueId = 2;
+            else if (m_vScore < 800) m_vLeagueId = 3;
+            else if (m_vScore < 1000) m_vLeagueId = 4;
+            else if (m_vScore < 1200) m_vLeagueId = 5;
+            else if (m_vScore < 1400) m_vLeagueId = 6;
+            else if (m_vScore < 1600) m_vLeagueId = 7;
+            else if (m_vScore < 1800) m_vLeagueId = 8;
+            else if (m_vScore < 2000) m_vLeagueId = 9;
+            else if (m_vScore < 2200) m_vLeagueId = 10;
+            else if (m_vScore < 2400) m_vLeagueId = 11;
+            else if (m_vScore < 2600) m_vLeagueId = 12;
+            else if (m_vScore < 2800) m_vLeagueId = 13;
+            else if (m_vScore < 3000) m_vLeagueId = 14;
+            else if (m_vScore < 3200) m_vLeagueId = 15;
+            else if (m_vScore < 3500) m_vLeagueId = 16;
+            else if (m_vScore < 3800) m_vLeagueId = 17;
+            else if (m_vScore < 4100) m_vLeagueId = 18;
+            else if (m_vScore < 4400) m_vLeagueId = 19;
+            else if (m_vScore < 4700) m_vLeagueId = 20;
+            else if (m_vScore < 5000) m_vLeagueId = 21;
+            else m_vLeagueId = 22;
         }
 
-        // <-- DITAMBAHKAN: Modifikasi fungsi SetScore untuk ngetrack rekor
+        // --- UPDATE SETSCORE SUPAYA REKOR OTOMATIS BERUBAH ---
         public void SetScore(int newScore)
         {
             m_vScore = newScore;
             
+            // Cek rekor setiap kali trophy berubah
             if (m_vScore > m_vAllTimeBestScore)
             {
                 m_vAllTimeBestScore = m_vScore;
             }
             
-            UpdateLeague(); 
+            UpdateLeague();
         }
 
         public int GetLeagueId()
