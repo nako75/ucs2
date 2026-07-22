@@ -132,6 +132,9 @@ namespace UCS.Logic
             return (m_vAllianceMembers.Count >= m_vMaxAllianceMembers);
         }
 
+        public bool IsInWar { get; set; }
+public int WarEndTime { get; set; } // Menyimpan batas waktu 1 jam (dalam format detik UTC)
+
         public int GetAllianceBadgeData()
         {
             return m_vAllianceBadgeData;
