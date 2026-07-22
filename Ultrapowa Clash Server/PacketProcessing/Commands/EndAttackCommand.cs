@@ -83,7 +83,7 @@ namespace UCS.PacketProcessing.Commands
             // PENTING: Lock-in ke database! 
             // Karena database langsung di-save saat battle berakhir, pasukan yang mati/dideploy 
             // tidak akan balik lagi ke Army Camp saat pemain pulang ke desa!
-            DatabaseManager.Singelton.Save(new List<Level> { level });
+            new DatabaseManager().Save(new List<Level> { level });
         }
     }
 }
