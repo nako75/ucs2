@@ -255,6 +255,8 @@
     <Compile Include="PacketProcessing\Messages\Client\CreateAllianceMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Client\ChatToAllianceStreamMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Client\SendGlobalChatLineMessage.cs" />
+    <Compile Include="PacketProcessing\Messages\Client\AskForTopPlayersListMessage.cs" />
+    <Compile Include="PacketProcessing\Messages\Client\AskForTopClansListMessage.cs" />
     <Compile Include="Core\MessageManager.cs" />
     <Compile Include="PacketProcessing\Messages\Client\AskForJoinableAlliancesListMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Client\ChangeAvatarNameMessage.cs" />
@@ -309,6 +311,8 @@
     <Compile Include="PacketProcessing\Messages\Server\AllianceListMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Server\SessionKeyMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Server\LeaveAllianceOkMessage.cs" />
+    <Compile Include="PacketProcessing\Messages\Server\GlobalPlayersMessage.cs" />
+    <Compile Include="PacketProcessing\Messages\Server\GlobalAlliancesMessage.cs" />
     <Compile Include="PacketProcessing\Messages\Client\StartWarSearchMessage.cs" />
     <Compile Include="PacketProcessing\Message.cs" />
     <Compile Include="Core\Network\SocketRead.cs" />
