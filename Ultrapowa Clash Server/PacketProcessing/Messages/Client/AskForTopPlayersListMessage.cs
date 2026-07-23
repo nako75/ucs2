@@ -23,13 +23,15 @@ namespace UCS.PacketProcessing.Messages.Client
 
         public override void Process(Level level)
         {
-            // Ambil semua avatar di memori server, urutkan dari Trophy tertinggi (Max 100 pemain)
-            List<ClientAvatar> topPlayers = ObjectManager.GetInMemoryAvatars()
+            // Ambil semua Level yang aktif di memori server, ekstrak avatarnya, lalu urutkan dari Trophy tertinggi
+            List<ClientAvatar> topPlayers = ObjectManager.GetLevels()
+                .Values
+                .Select(l => l.GetPlayerAvatar())
                 .OrderByDescending(a => a.GetScore())
                 .Take(100)
                 .ToList();
 
-            // Pengaman: Kalau list kosong karena suatu hal, masukin akun kita sendiri
+            // Pengaman: Kalau list kosong, masukkan akun pemain yang sedang request
             if (topPlayers.Count == 0)
             {
                 topPlayers.Add(level.GetPlayerAvatar());
