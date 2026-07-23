@@ -7,7 +7,6 @@ using UCS.Helpers;
 
 namespace UCS.PacketProcessing
 {
-    // Packet 24404: Server response untuk Top Players
     class GlobalPlayersMessage : Message
     {
         private List<ClientAvatar> m_vPlayers;
@@ -31,27 +30,30 @@ namespace UCS.PacketProcessing
             int rank = 1;
             foreach (ClientAvatar player in m_vPlayers)
             {
-                data.AddString(player.GetAvatarName());
+                string name = player.GetAvatarName();
+                if (string.IsNullOrEmpty(name)) name = "Chief";
+
+                data.AddString(name);
                 data.AddInt32(player.GetScore());       // Trophy sekarang
-                data.AddInt32(rank++);                  // Ranking ke (1, 2, 3...)
+                data.AddInt32(rank++);                  // Ranking (1, 2, 3...)
                 data.AddInt32(player.GetAvatarLevel()); // Level XP
-                data.AddInt32(100);                     // Attack won (dummy)
-                data.AddInt32(10);                      // Attack lost (dummy)
-                data.AddInt32(player.GetScore());       // All time best trophy
-                data.AddInt32(1);                       // Unknown padding
-                data.AddInt32(player.GetLeagueId());    // Emblem Liga
-                data.AddString("ID");                   // Bendera Negara (ID = Indonesia!)
+                data.AddInt32(100);                     // Attacks Won
+                data.AddInt32(10);                      // Attacks Lost
+                data.AddInt32(player.GetScore());       // All Time Best Trophy
+                data.AddInt32(0);                       // Padding
+                data.AddInt32(player.GetLeagueId());    // League ID
+                data.AddString("ID");                   // Region / Bendera (Indonesia)
                 data.AddInt64(player.GetId());          // Avatar ID
                 
-                // Cek apakah pemain masuk Clan
+                // FIX CRASH: Gunakan Int32 (4 bytes) untuk flag Clan, bukan 1 byte!
                 if (player.GetAllianceId() != 0)
                 {
-                    data.Add(1); // Has clan
+                    data.AddInt32(1); // 1 = Punya Clan
                     data.AddInt64(player.GetAllianceId());
                     Alliance alliance = ObjectManager.GetAlliance(player.GetAllianceId());
                     if (alliance != null)
                     {
-                        data.AddString(alliance.GetAllianceName());
+                        data.AddString(alliance.GetAllianceName() ?? "Clan");
                         data.AddInt32(alliance.GetAllianceBadgeData());
                     }
                     else
@@ -62,12 +64,12 @@ namespace UCS.PacketProcessing
                 }
                 else
                 {
-                    data.Add(0); // Gak punya clan
+                    data.AddInt32(0); // 0 = Tidak punya Clan
                 }
             }
 
-            // Info penutupan season (Misal sisa 7 hari = 604800 detik)
-            data.AddInt32(604800);
+            // Season info
+            data.AddInt32(604800); // Sisa waktu season (detik)
             data.AddInt32(2026);
             data.AddInt32(7);
 
