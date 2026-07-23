@@ -7,7 +7,6 @@ using UCS.Helpers;
 
 namespace UCS.PacketProcessing
 {
-    // Packet 24403: Server response untuk Top Clans
     class GlobalAlliancesMessage : Message
     {
         private List<Alliance> m_vAlliances;
@@ -31,17 +30,20 @@ namespace UCS.PacketProcessing
             int rank = 1;
             foreach (Alliance alliance in m_vAlliances)
             {
+                string allianceName = alliance.GetAllianceName();
+                if (string.IsNullOrEmpty(allianceName)) allianceName = "Clan";
+
                 data.AddInt64(alliance.GetAllianceId());
-                data.AddString(alliance.GetAllianceName());
+                data.AddString(allianceName);
                 data.AddInt32(rank++);                              // Ranking Clan
                 data.AddInt32(alliance.GetScore());                 // Total Trophy Clan
-                data.AddInt32(alliance.GetAllianceMembers().Count); // Jumlah member
-                data.AddInt32(alliance.GetAllianceBadgeData());     // Emblem Clan
+                data.AddInt32(alliance.GetAllianceMembers().Count); // Jumlah Member
+                data.AddInt32(alliance.GetAllianceBadgeData());     // Badge / Emblem Clan
                 data.AddInt32(alliance.GetAllianceLevel());         // Level Clan
-                data.AddString("ID");                               // Bendera (ID = Indonesia!)
+                data.AddString("ID");                               // Bendera (Indonesia)
             }
 
-            // Info penutupan season
+            // Season info
             data.AddInt32(604800);
             data.AddInt32(2026);
             data.AddInt32(7);
