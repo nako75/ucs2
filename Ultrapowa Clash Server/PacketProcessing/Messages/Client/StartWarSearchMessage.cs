@@ -2,13 +2,12 @@ using System;
 using System.IO;
 using UCS.Core;
 using UCS.Logic;
+using UCS.PacketProcessing.Messages.Server; // <-- Penting buat ngirim data map Goblin
 
 namespace UCS.PacketProcessing.Messages.Client
 {
-    // ID Paket: 14331 (Dieksekusi pas Leader/Co-Leader klik tombol Start War)
     internal class StartWarSearchMessage : Message
     {
-        // FIX CS0118: Pakai "UCS.PacketProcessing.Client" supaya gak bentrok sama nama namespace
         public StartWarSearchMessage(UCS.PacketProcessing.Client client, BinaryReader br) : base(client, br)
         {
         }
@@ -28,16 +27,42 @@ namespace UCS.PacketProcessing.Messages.Client
                 Alliance alliance = ObjectManager.GetAlliance(allianceId);
                 if (alliance != null)
                 {
-                    // Aktifkan status war dan set durasi 1 Jam (3600 detik)
+                    // 1. Aktifkan status War 1 Jam di Clan
                     int currentEpoch = (int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
                     alliance.IsInWar = true;
                     alliance.WarEndTime = currentEpoch + 3600; // +1 Jam
 
-                    // Efek visual di Console Server
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[CLAN WARS EVENT] Clan '{alliance.GetAllianceName()}' memulai War 1 Jam! Target: PvE Goblin Map.");
+                    Console.WriteLine($"[CLAN WARS] {avatar.GetAvatarName()} memicu War! Melempar langsung ke arena Raja Goblin!");
                     Console.ResetColor();
+
+                    // 2. TRIK INSTANT TELEPORT KE PVE GOBLIN!
+                    // Begitu tombol war ditekan, kita langsung kirim paket base Goblin ke HP pemain.
+                    // Layar HP pemain bakal otomatis loading awan putih dan langsung masuk ke battle!
+                    try 
+                    {
+                        // ID 17000050 adalah level tertinggi Goblin (Sherbet Towers / Raja Goblin)
+                        // Kalau mau level awal, ganti jadi 17000001
+                        int warGoblinLevelId = 17000050; 
+                        
+                        NpcLevel npcLevel = ObjectManager.GetNpcLevel(warGoblinLevelId);
+                        if (npcLevel != null)
+                        {
+                            NpcDataMessage npcMessage = new NpcDataMessage(this.Client, npcLevel);
+                            npcMessage.Send();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("[Error War Drop] Gagal melempar ke map Goblin: " + ex.Message);
+                    }
                 }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[CLAN WARS] {avatar.GetAvatarName()} mencoba war tapi belum join Clan!");
+                Console.ResetColor();
             }
         }
     }
