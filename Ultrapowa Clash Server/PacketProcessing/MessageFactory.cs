@@ -38,6 +38,8 @@ namespace UCS.PacketProcessing
             m_vMessages.Add(14315, typeof(ChatToAllianceStreamMessage));
             m_vMessages.Add(14324, typeof(SearchAlliancesMessage));
             m_vMessages.Add(14325, typeof(AskForAvatarProfileMessage));
+            m_vMessages.Add(14403, typeof(AskForTopClansListMessage));   // <-- TAMBAHIN INI (Top Clans)
+            m_vMessages.Add(14404, typeof(AskForTopPlayersListMessage));
             m_vMessages.Add(14715, typeof(SendGlobalChatLineMessage));
         }
 
