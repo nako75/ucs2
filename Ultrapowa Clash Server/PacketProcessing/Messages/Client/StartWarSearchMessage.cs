@@ -2,7 +2,8 @@ using System;
 using System.IO;
 using UCS.Core;
 using UCS.Logic;
-using UCS.PacketProcessing; // <-- Penting buat ngirim data map Goblin
+using UCS.PacketProcessing;
+using UCS.Core.Network; // <-- DITAMBAHKAN AGAR KENAL PACKETMANAGER
 
 namespace UCS.PacketProcessing.Messages.Client
 {
@@ -33,24 +34,20 @@ namespace UCS.PacketProcessing.Messages.Client
                     alliance.WarEndTime = currentEpoch + 3600; // +1 Jam
 
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[CLAN WARS] {avatar.GetAvatarName()} memicu War! Melempar langsung ke arena Raja Goblin!");
+                    Console.WriteLine($"[CLAN WARS] {avatar.GetAvatarName()} memicu War! Teleportasi ke arena Goblin!");
                     Console.ResetColor();
 
-                    // 2. TRIK INSTANT TELEPORT KE PVE GOBLIN!
-                    // Begitu tombol war ditekan, kita langsung kirim paket base Goblin ke HP pemain.
-                    // Layar HP pemain bakal otomatis loading awan putih dan langsung masuk ke battle!
+                    // 2. INSTANT TELEPORT KE GOBLIN MAP
                     try 
                     {
-                        // ID 17000050 adalah level tertinggi Goblin (Sherbet Towers / Raja Goblin)
-                        // Kalau mau level awal, ganti jadi 17000001
-                        int warGoblinLevelId = 17000050; 
+                        // 17000040 adalah ID untuk base Goblin level tinggi (sekitar level 41)
+                        int warGoblinLevelId = 17000040; 
                         
-                        NpcLevel npcLevel = ObjectManager.GetNpcLevel(warGoblinLevelId);
-                        if (npcLevel != null)
-                        {
-                            NpcDataMessage npcMessage = new NpcDataMessage(this.Client, npcLevel);
-                            npcMessage.Send();
-                        }
+                        // Pakai konstruktor baru yang kita pasang di NpcDataMessage
+                        NpcDataMessage npcMessage = new NpcDataMessage(this.Client, level, warGoblinLevelId);
+                        
+                        // Cara resmi mengirim paket pesan ke HP pemain di UCS 0.4.1
+                        PacketManager.ProcessOutgoingPacket(npcMessage);
                     }
                     catch (Exception ex)
                     {
