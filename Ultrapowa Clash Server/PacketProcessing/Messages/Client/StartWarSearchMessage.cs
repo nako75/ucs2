@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UCS.Core;
 using UCS.Logic;
-using UCS.PacketProcessing.Messages.Server; // <-- Penting buat ngirim data map Goblin
+using UCS.PacketProcessing; // <-- Penting buat ngirim data map Goblin
 
 namespace UCS.PacketProcessing.Messages.Client
 {
