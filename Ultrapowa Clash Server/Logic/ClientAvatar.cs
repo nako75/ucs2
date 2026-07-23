@@ -120,12 +120,12 @@ namespace UCS.Logic
             data.AddInt32(m_vScore);
 
             // --- BONGKAR MISTERI 7 BARIS ANGKA NOL SUPAYA PROFIL LU HIDUP ---
-            data.AddInt32(999999); // 1. Attacks Won (Nanti bisa kita bikin fiturnya juga!)
-            data.AddInt32(999999); // 2. Attacks Lost
-            data.AddInt32(999999); // 3. Defenses Won
-            data.AddInt32(999999); // 4. Defenses Lost
+            data.AddInt32(500); // 1. Attacks Won (Nanti bisa kita bikin fiturnya juga!)
+            data.AddInt32(200); // 2. Attacks Lost
+            data.AddInt32(300); // 3. Defenses Won
+            data.AddInt32(100); // 4. Defenses Lost
             data.AddInt32(GetAllTimeBestScore()); // 5. ALL TIME BEST TROPHIES!
-            data.AddInt32(999999); // 6. War Stars Won
+            data.AddInt32(0); // 6. War Stars Won
             data.AddInt32(0); // 7. Unspecified zero
 
             data.AddRange(new byte[]{
@@ -193,58 +193,10 @@ namespace UCS.Logic
             return m_vAllianceId;
         }
 
-        // 1. Algoritma penghitung Level dari Total Experience (XP) bergaya Clash of Clans
-        public void UpdateAvatarLevel()
-        {
-            int xp = m_vExperience;
-            int calculatedLevel = 1;
-            int xpRequired = 30; // XP yang dibutuhkan untuk naik dari Lvl 1 ke Lvl 2
-
-            // Loop hitung level berdasarkan akumulasi XP
-            while (xp >= xpRequired)
-            {
-                xp -= xpRequired;
-                calculatedLevel++;
-                xpRequired += 50; // Di CoC, setiap naik level butuh tambahan XP lebih banyak
-            }
-
-            // Update level akun kalau hasil hitungan XP ternyata lebih tinggi!
-            if (calculatedLevel > m_vAvatarLevel)
-            {
-                m_vAvatarLevel = calculatedLevel;
-            }
-        }
-
-        // 2. Setiap kali server atau game minta data level, otomatis sinkronisasi dulu!
         public int GetAvatarLevel()
         {
-            UpdateAvatarLevel();
             return m_vAvatarLevel;
         }
-
-        // 3. Setter untuk mengubah Level secara langsung (wajib ada biar gak error)
-        public void SetAvatarLevel(int level)
-        {
-            m_vAvatarLevel = level;
-        }
-
-        // 4. Getter & Setter untuk Experience (XP)
-        public int GetExperience()
-        {
-            return m_vExperience;
-        }
-
-        public void SetExperience(int exp)
-        {
-            m_vExperience = exp;
-            UpdateAvatarLevel(); // <-- Setiap XP berubah, Level langsung naik!
-        }
-
-        public void AddExperience(int exp)
-        {
-            m_vExperience += exp;
-            UpdateAvatarLevel(); // <-- Otomatis naik level pas selesai upgrade bangunan/battle!
-        }        
 
         public string GetAvatarName()
         {
