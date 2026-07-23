@@ -3,6 +3,7 @@ using System.IO;
 using UCS.Core;
 using UCS.Logic;
 using UCS.PacketProcessing;
+using UCS.Network; // <-- DITAMBAHKAN AGAR KENAL PACKETMANAGER
 
 namespace UCS.PacketProcessing.Messages.Client
 {
@@ -39,13 +40,12 @@ namespace UCS.PacketProcessing.Messages.Client
                     // 2. INSTANT TELEPORT KE GOBLIN MAP
                     try 
                     {
-                        // 17000040 adalah ID untuk base Goblin level tinggi (sekitar level 41)
+                        // 17000040 adalah ID untuk base Goblin level tinggi
                         int warGoblinLevelId = 17000040; 
                         
-                        // Pakai konstruktor baru yang kita pasang di NpcDataMessage
                         NpcDataMessage npcMessage = new NpcDataMessage(this.Client, level, warGoblinLevelId);
                         
-                        // Cara resmi mengirim paket pesan ke HP pemain di UCS 0.4.1
+                        // Coba kirim pakai PacketManager dari namespace UCS.Network
                         PacketManager.ProcessOutgoingPacket(npcMessage);
                     }
                     catch (Exception ex)
