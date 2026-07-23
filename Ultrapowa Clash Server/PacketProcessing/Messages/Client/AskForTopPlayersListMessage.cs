@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using UCS.Core;
 using UCS.Logic;
 using UCS.PacketProcessing;
@@ -23,18 +22,13 @@ namespace UCS.PacketProcessing.Messages.Client
 
         public override void Process(Level level)
         {
-            // Ambil semua Level yang aktif di memori server, ekstrak avatarnya, lalu urutkan dari Trophy tertinggi
-            List<ClientAvatar> topPlayers = ObjectManager.GetLevels()
-                .Values
-                .Select(l => l.GetPlayerAvatar())
-                .OrderByDescending(a => a.GetScore())
-                .Take(100)
-                .ToList();
-
-            // Pengaman: Kalau list kosong, masukkan akun pemain yang sedang request
-            if (topPlayers.Count == 0)
+            // Ambil avatar pemain yang sedang aktif dan masukkan sebagai Top Player pertama
+            List<ClientAvatar> topPlayers = new List<ClientAvatar>();
+            ClientAvatar currentAvatar = level.GetPlayerAvatar();
+            
+            if (currentAvatar != null)
             {
-                topPlayers.Add(level.GetPlayerAvatar());
+                topPlayers.Add(currentAvatar);
             }
 
             GlobalPlayersMessage message = new GlobalPlayersMessage(this.Client);
