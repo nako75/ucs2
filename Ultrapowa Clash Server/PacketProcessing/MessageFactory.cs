@@ -31,6 +31,7 @@ namespace UCS.PacketProcessing
             m_vMessages.Add(14302, typeof(AskForAllianceDataMessage));
             m_vMessages.Add(14303, typeof(AskForJoinableAlliancesListMessage));
             m_vMessages.Add(14305, typeof(JoinAllianceMessage));
+            m_vMessages.Add(14330, typeof(StartWarSearchMessage));
             m_vMessages.Add(14331, typeof(StartWarSearchMessage)); // <-- Tombol Start War
             //m_vMessages.Add(14306, );//Promote
             m_vMessages.Add(14308, typeof(LeaveAllianceMessage));
