@@ -3,7 +3,6 @@ using System.IO;
 using UCS.Core;
 using UCS.Logic;
 using UCS.PacketProcessing;
-using UCS.Core.Network; // <-- DITAMBAHKAN AGAR KENAL PACKETMANAGER
 
 namespace UCS.PacketProcessing.Messages.Client
 {
